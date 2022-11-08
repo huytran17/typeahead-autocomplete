@@ -61,7 +61,7 @@ The only required attribute is a `items` array.
 | ------------- | ------------------ | ------- | ------------------------------------------------- |
 | items         | `Array`            |         | Array of data. **Required**                       |
 | initialText   | `String`           | `text`  | The displayed text at first.                      |
-| initialValue  | `String`, `Number` | `value  | The selected value at first.                      |
+| initialValue  | `String`, `Number` | `value` | The selected value at first.                      |
 | bindingText   | `String`           | `text`  | Path to the property used to display the text.    |
 | bindingValue  | `String`           | `value` | Path to the property used to return the value.    |
 | prependText   | `String`           |         | Text used to add at the beginning of the item.    |
