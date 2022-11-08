@@ -20,7 +20,7 @@ From NPM:
   src="node_modules/typeahead-autocomplete/dist/typeahead-autocomplete.min.js"
 ></script>
 <script type="text/javascript">
-  Vue.use(Dropdown);
+  Vue.use(TypeaheadAutocomplete);
 </script>
 ```
 
