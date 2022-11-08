@@ -1,7 +1,5 @@
 # typeahead-autocomplete
 
-## [DEMO](https://alexurquhart.github.io/vue-bootstrap-typeahead/#/examples)
-
 ## Installation
 
 From NPM:
