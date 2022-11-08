@@ -48,5 +48,13 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/huytran17/typeahead-autocomplete.git"
-  }
+  },
+  "keywords": [
+    "typeahead-autocomplete",
+    "typeahead",
+    "autocomplete",
+    "vue typeahead",
+    "vue autocomplete",
+    "vue typeahead-autocomplete"
+  ],
 }
