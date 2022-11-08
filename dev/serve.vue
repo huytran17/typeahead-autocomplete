@@ -1,15 +1,17 @@
 <script>
 import Vue from "vue";
-// Uncomment import and local "components" registration if library is not registered globally.
 import { TypeaheadAutocomplete } from "@/entry.esm";
 
 export default Vue.extend({
   name: "ServeDev",
+
   components: {
     TypeaheadAutocomplete,
   },
+
   data() {
     return {
+      selectedValue: undefined,
       items: [
         {
           text: "1",
@@ -67,6 +69,17 @@ export default Vue.extend({
 
 <template>
   <div id="app">
-    <typeahead-autocomplete :items="items" />
+    <typeahead-autocomplete
+      v-model="selectedValue"
+      :items="items"
+      initial-text="1"
+      :initial-value="1"
+      binding-text="text"
+      binding-value="value"
+    >
+      <template v-slot:nodata>
+        <span>No data available</span>
+      </template>
+    </typeahead-autocomplete>
   </div>
 </template>

@@ -7,18 +7,21 @@
         :class="[inputClass]"
         :disabled="disableInput"
         :placeholder="placeholder"
+        :readonly="readOnly"
         @input="handleInput"
-        @blur="hideDropdownMenu"
-        @focus="showDropdownMenu = true"
-        @click="showDropdownMenu = true"
+        @click="click"
+        @focusin="focusin"
+        @blur="blur"
+        autocomplete="off"
       />
+      <input type="hidden" :value="selectedItem.value" />
     </div>
-    <div v-show="showDropdownMenu" class="dropdown__autocomplete">
+    <div v-if="hasItems && isFocused" class="dropdown__autocomplete">
       <div
         v-for="(item, index) in filteredItems"
         :key="index"
         class="dropdown__item"
-        :class="{ selected: item.value === selectedItem.value }"
+        :class="{ highlight: item.value === selectedItem.value }"
         @click="setSelectedItem(item)"
       >
         <span v-if="item.prependText">{{ item.prependText }}</span>
@@ -26,16 +29,30 @@
         <span v-if="item.appendText">{{ item.appendText }}</span>
       </div>
     </div>
+
+    <div
+      name="no-data"
+      v-if="!hasItems && showNoData"
+      class="result__no-data-wrapper"
+    >
+      <div class="result__no-data">
+        <slot name="nodata">
+          <span>No data</span>
+        </slot>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 export default {
+  template: "#typeahead-autocomplete",
+
   prop: ["value"],
 
   model: {
     prop: "value",
-    event: "input",
+    event: "hit",
   },
 
   props: {
@@ -84,6 +101,16 @@ export default {
       default: () => false,
     },
 
+    readOnly: {
+      type: Boolean,
+      default: () => false,
+    },
+
+    showNoData: {
+      type: Boolean,
+      default: () => true,
+    },
+
     placeholder: {
       type: String,
       default: () => "",
@@ -97,13 +124,17 @@ export default {
 
   data() {
     return {
-      selectedItem: {
-        text: this.initialText,
-        value: this.initialValue,
-      },
+      selectedItem: {},
       showDropdownMenu: false,
       filteredItems: this.items,
+      isFocused: false,
     };
+  },
+
+  computed: {
+    hasItems() {
+      return this.filteredItems.length;
+    },
   },
 
   watch: {
@@ -112,36 +143,44 @@ export default {
       handler(value) {
         this.filterData();
         this.$emit("change", value);
+        this.$emit("hit", value[this.bindingValue] || undefined);
       },
     },
 
-    items: {
-      deep: true,
+    isFocused: {
       handler(value) {
-        this.filteredItems = value;
-      },
-    },
-
-    initialValue: {
-      handler(value) {
-        this.selectedItem.value = value;
-      },
-    },
-
-    initialText: {
-      handler(value) {
-        this.selectedItem.text = value;
+        if (value) {
+          this.filterData();
+        }
       },
     },
   },
+
+  created() {
+    this.filteredItems = this.items;
+
+    this.selectedItem = {
+      text: this.initialText,
+      value: this.initialValue,
+    };
+  },
+
   methods: {
-    setSelectedItem(item) {
-      this.selectedItem = item;
-      this.showDropdownMenu = false;
+    click() {
+      this.isFocused = true;
     },
 
-    hideDropdownMenu() {
-      return setTimeout(() => (this.showDropdownMenu = false), 200);
+    focusin() {
+      this.isFocused = true;
+    },
+
+    blur() {
+      setTimeout(() => (this.isFocused = false), 200);
+    },
+
+    setSelectedItem(item) {
+      this.selectedItem = item;
+      this.isFocused = false;
     },
 
     handleInput(event) {
@@ -155,20 +194,26 @@ export default {
 
     filterData() {
       if (this.disableSearch) {
-        if (this.selectedItem.text) {
-          this.showDropdownMenu = false;
-          return;
-        }
-
-        this.showDropdownMenu = true;
         return;
       }
 
-      this.filteredItems = this.items.filter((item) =>
-        `${item.prependText} ${item.text} ${item.appendText}`
-          ?.toLowerCase()
-          .includes(this.selectedItem?.text?.toLowerCase())
-      );
+      this.filteredItems = this.items.filter((item) => {
+        const prependText = item.prependText;
+        const appendText = item.appendText;
+        let textToCompare = item.text || "";
+
+        if (prependText) {
+          textToCompare = `${prependText} ${textToCompare}`;
+        }
+
+        if (appendText) {
+          textToCompare = `${textToCompare} ${appendText}`;
+        }
+
+        return textToCompare
+          .toLowerCase()
+          .includes(this.selectedItem?.text?.toLowerCase());
+      });
     },
   },
 };
@@ -184,13 +229,23 @@ export default {
   font-size: 12px;
   margin-bottom: 2px;
   width: 100%;
+  padding: 4px 8px;
 }
-.dropdown__autocomplete {
+.input__autocomplete {
+  display: flex;
+}
+.input__autocomplete input:first-child:focus {
+  outline: none !important;
+}
+.result__no-data-wrapper {
+  display: flex;
+}
+.dropdown__autocomplete,
+.result__no-data-wrapper {
   max-height: 206px;
   height: min-content;
   overflow-y: auto;
   border: 1px solid #5180d8;
-  padding: 2px;
   position: absolute;
   bottom: 0;
   left: 0;
@@ -199,16 +254,20 @@ export default {
   background: #fff;
   z-index: 99;
 }
+.result__no-data {
+  padding: 6px 4px;
+  color: #aaa;
+  text-align: center;
+  width: 100%;
+}
 .dropdown__item {
-  padding: 2px 4px;
+  padding: 6px 8px;
   cursor: pointer;
 }
 .dropdown__item:hover {
-  border: 1px solid #5180d8;
-  background: #fdeaa6;
+  background: #dbe7f5;
 }
 .highlight {
-  border: 1px solid #5180d8;
-  background: #fdeaa6;
+  background: #dbe7f5;
 }
 </style>
