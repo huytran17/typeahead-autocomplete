@@ -1,6 +1,6 @@
 <template>
   <div class="autocomplete__wrapper">
-    <div class="input__autocomplete">
+    <div class="autocomplete__input">
       <input
         type="text"
         :value="selectedItem.text"
@@ -8,33 +8,33 @@
         :disabled="disableInput"
         :placeholder="placeholder"
         :readonly="readOnly"
+        autocomplete="off"
         @input="handleInput"
         @click="click"
         @focusin="focusin"
         @blur="blur"
-        autocomplete="off"
       />
       <input type="hidden" :value="selectedItem.value" />
     </div>
-    <div v-if="hasItems && isFocused" class="dropdown__autocomplete">
+    <div v-if="shouldShowDropdown" class="autocomplete__dropdown">
       <div
         v-for="(item, index) in filteredItems"
         :key="index"
-        class="dropdown__item"
-        :class="{ highlight: item.value === selectedItem.value }"
+        class="autocomplete__dropdown-item"
+        :class="{ highlight: item[bindingValue] === selectedItem.value }"
         @click="setSelectedItem(item)"
       >
+        <slot name="prepend"></slot>
+
         <span v-if="item.prependText">{{ item.prependText }}</span>
         <span>{{ item[bindingText] }}</span>
         <span v-if="item.appendText">{{ item.appendText }}</span>
+
+        <slot name="append"></slot>
       </div>
     </div>
 
-    <div
-      name="no-data"
-      v-if="!hasItems && showNoData"
-      class="result__no-data-wrapper"
-    >
+    <div name="no-data" v-if="shouldShowNoData" class="result__no-data-wrapper">
       <div class="result__no-data">
         <slot name="nodata">
           <span>No data</span>
@@ -120,14 +120,30 @@ export default {
       type: String,
       default: () => "",
     },
+
+    remoteMode: {
+      type: Boolean,
+      default: () => false,
+    },
+
+    remoteUrl: {
+      type: String,
+      default: () => "",
+    },
+
+    requestTimeout: {
+      type: Number,
+      default: () => 10000,
+    },
   },
 
   data() {
     return {
       selectedItem: {},
       showDropdownMenu: false,
-      filteredItems: this.items,
+      filteredItems: [],
       isFocused: false,
+      remoteData: [],
     };
   },
 
@@ -135,21 +151,43 @@ export default {
     hasItems() {
       return this.filteredItems.length;
     },
+
+    dataToFilter() {
+      return this.remoteMode ? this.remoteData : this.items;
+    },
+
+    shouldShowNoData() {
+      return !this.hasItems && this.showNoData && this.isFocused;
+    },
+
+    shouldShowDropdown() {
+      return this.hasItems && this.isFocused;
+    },
   },
 
   watch: {
+    remoteData: {
+      deep: true,
+      immediate: true,
+      handler(data) {
+        if (this.remoteMode) {
+          this.filteredItems = data;
+        }
+      },
+    },
+
     selectedItem: {
       deep: true,
-      handler(value) {
+      handler(data) {
         this.filterData();
-        this.$emit("change", value);
-        this.$emit("hit", value[this.bindingValue] || undefined);
+        this.$emit("change", data);
+        this.$emit("hit", data.value || undefined);
       },
     },
 
     isFocused: {
-      handler(value) {
-        if (value) {
+      handler(data) {
+        if (data) {
           this.filterData();
         }
       },
@@ -157,12 +195,16 @@ export default {
   },
 
   created() {
-    this.filteredItems = this.items;
-
     this.selectedItem = {
       text: this.initialText,
       value: this.initialValue,
     };
+
+    if (this.remoteMode) {
+      return this.fetchRemoteData();
+    }
+
+    this.filteredItems = this.items;
   },
 
   methods: {
@@ -179,7 +221,11 @@ export default {
     },
 
     setSelectedItem(item) {
-      this.selectedItem = item;
+      this.selectedItem = {
+        text: item[this.bindingText],
+        value: item[this.bindingValue],
+      };
+
       this.isFocused = false;
     },
 
@@ -197,10 +243,10 @@ export default {
         return;
       }
 
-      this.filteredItems = this.items.filter((item) => {
+      this.filteredItems = this.dataToFilter.filter((item) => {
         const prependText = item.prependText;
         const appendText = item.appendText;
-        let textToCompare = item.text || "";
+        let textToCompare = item[this.bindingText] || "";
 
         if (prependText) {
           textToCompare = `${prependText} ${textToCompare}`;
@@ -215,6 +261,43 @@ export default {
           .includes(this.selectedItem?.text?.toLowerCase());
       });
     },
+
+    fetchRemoteData() {
+      try {
+        const xhr = new XMLHttpRequest();
+
+        xhr.open("GET", this.remoteUrl);
+
+        xhr.responseType = "json";
+
+        xhr.timeout = this.requestTimeout;
+
+        xhr.setRequestHeader("Content-Type", "application/json");
+
+        xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+
+        xhr.setRequestHeader("Access-Control-Allow-Origin", "*");
+
+        xhr.send();
+
+        xhr.onload = () => {
+          if (xhr.status === 200) {
+            this.remoteData = xhr.response || [];
+            this.$emit("fetch", xhr.response);
+          }
+        };
+
+        xhr.ontimeout = () => {
+          throw new Error(`Request timed out. Requested at ${this.remoteUrl}.`);
+        };
+
+        xhr.onerror = (error) => {
+          throw new Error(error);
+        };
+      } catch (error) {
+        console.error(error);
+      }
+    },
   },
 };
 </script>
@@ -223,7 +306,7 @@ export default {
 .autocomplete__wrapper {
   position: relative;
 }
-.input__autocomplete input:first-child {
+.autocomplete__input input:first-child {
   border: 1px solid #aaa;
   height: 20px;
   font-size: 12px;
@@ -231,16 +314,16 @@ export default {
   width: 100%;
   padding: 4px 8px;
 }
-.input__autocomplete {
+.autocomplete__input {
   display: flex;
 }
-.input__autocomplete input:first-child:focus {
+.autocomplete__input input:first-child:focus {
   outline: none !important;
 }
 .result__no-data-wrapper {
   display: flex;
 }
-.dropdown__autocomplete,
+.autocomplete__dropdown,
 .result__no-data-wrapper {
   max-height: 206px;
   height: min-content;
@@ -260,11 +343,11 @@ export default {
   text-align: center;
   width: 100%;
 }
-.dropdown__item {
+.autocomplete__dropdown-item {
   padding: 6px 8px;
   cursor: pointer;
 }
-.dropdown__item:hover {
+.autocomplete__dropdown-item:hover {
   background: #dbe7f5;
 }
 .highlight {
