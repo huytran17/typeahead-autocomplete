@@ -4,6 +4,8 @@
 
 This package is available for VueJS 2x
 
+## [View The Examples](https://codesandbox.io/s/vue-2-playground-forked-wqy5nf?file=/src/App.vue)
+
 ![image](https://user-images.githubusercontent.com/68387887/200896104-8fae132e-393c-4027-8faa-05845af5bd83.png)
 ![image](https://user-images.githubusercontent.com/68387887/200896417-baaafec6-8bab-4b9d-9db4-ce469edafcd5.png)
 

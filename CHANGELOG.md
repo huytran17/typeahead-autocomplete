@@ -9,7 +9,7 @@
 - Updated UI
 - Updated documentation
 
-## 1.0.5, 1.0.6 - 09 Nov 2022
+## 1.0.5, 1.0.6, 1.0.7 - 09 Nov 2022
 
 - Added slots for custom the positions in front and behind the element
 - Added `remoteMode`, `remoteUrl`, `requestTimeout` prop to fetch data from API
