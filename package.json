@@ -1,6 +1,6 @@
 {
   "name": "typeahead-autocomplete",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "A VueJS plugin for typeahead autocomplete",
   "license": "MIT",
   "main": "dist/typeahead-autocomplete.ssr.js",
@@ -55,6 +55,9 @@
     "autocomplete",
     "vue typeahead",
     "vue autocomplete",
-    "vue typeahead-autocomplete"
+    "vue typeahead-autocomplete",
+    "dropdown",
+    "select",
+    "vue"
   ]
 }
