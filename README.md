@@ -41,7 +41,7 @@ Import and register the component
 import TypeaheadAutocomplete from "typeahead-autocomplete";
 
 // Global registration
-Vue.component("typeahead-autocomplete", TypeaheadAutocomplete);
+Vue.use(TypeaheadAutocomplete);
 
 // OR
 
